@@ -27,6 +27,7 @@
 #include "classfile/classLoaderDataGraph.hpp"
 #include "classfile/stringTable.hpp"
 #include "code/nmethod.hpp"
+#include "gc/shared/barrierSetNMethod.hpp"
 #include "memory/iterator.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "mmtkCollectorThread.hpp"
@@ -165,6 +166,26 @@ class MMTkUpdateClosure : public OopClosure {
   }
   inline virtual void do_oop(narrowOop* slot) override {
     guarantee(false, "unreachable");
+  }
+};
+
+// A CodeBlobClosure for use during live stack walks. It performs the same nmethod
+// "on stack" bookkeeping as MarkingCodeBlobClosure (mark_as_maybe_on_stack/disarm),
+// but deliberately does NOT re-scan the nmethod's embedded oops: those are already
+// tracked once, unconditionally, via MMTk's own code-cache-roots remembered set
+// (see MMTkHeap::register_nmethod / ScanCodeCacheRoots). Using MarkingCodeBlobClosure
+// here would report every on-stack nmethod's oops as GC roots twice in the same GC.
+class MMTkKeepAliveCodeBlobClosure : public CodeBlobClosure {
+public:
+  virtual void do_code_blob(CodeBlob* cb) override {
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != nullptr && nm->oops_do_try_claim()) {
+      nm->mark_as_maybe_on_stack();
+      BarrierSetNMethod* bs_nm = BarrierSet::barrier_set()->barrier_set_nmethod();
+      if (bs_nm != nullptr) {
+        bs_nm->disarm(nm);
+      }
+    }
   }
 };
 
@@ -343,7 +364,7 @@ static void mmtk_scan_roots_in_mutator_thread(SlotsClosure closure, void* tls) {
   ResourceMark rm;
   JavaThread* thread = (JavaThread*) tls;
   MMTkRootsClosure cl(closure);
-  MarkingCodeBlobClosure cb_cl(&cl, false, true);
+  MMTkKeepAliveCodeBlobClosure cb_cl;
   thread->oops_do(&cl, &cb_cl);
 }
 
