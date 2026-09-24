@@ -1,5 +1,5 @@
 includes:
-  - "./base.yml"
+  - "../base.yml"
 
 configs:
   - "jdk21-master|dacapochopin_jdk21|ms|s|fail_on_oom|tph|preserve|mmtk_gc-SemiSpace"
