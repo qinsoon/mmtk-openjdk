@@ -23,9 +23,8 @@ pub fn enable_compressed_oops() {
         !COMPRESSED_OOPS_INITIALIZED.fetch_or(true, Ordering::Relaxed),
         "cannot enable compressed pointers twice."
     );
-    if cfg!(not(target_arch = "x86_64")) {
-        panic!("Compressed pointer is only enable on x86_64 platforms.\
-            For other RISC architectures, we need to find a way to process compressed embeded pointers in code objects first.");
+    if cfg!(not(any(target_arch = "x86_64", target_arch = "aarch64"))) {
+        panic!("Compressed pointer is only enabled on x86_64 and aarch64 platforms.");
     }
     USE_COMPRESSED_OOPS.store(true, Ordering::Relaxed)
 }
@@ -158,17 +157,16 @@ impl<const COMPRESSED: bool> OpenJDKSlot<COMPRESSED> {
 /// Raw slot access on other architectures (e.g. aarch64 and riscv64).
 ///
 /// Code objects do not embed pointers as unaligned immediates in the instruction stream on these
-/// architectures, so all slots are aligned. Compressed oops are not supported on them yet (see
-/// `enable_compressed_oops`).
+/// architectures, so all slots are aligned. OpenJDK only reports the oop table of an nmethod as
+/// slots (see `relocInfo::mustIterateImmediateOopsInCode`), and the pointers encoded in
+/// instructions are patched from the oop table by `nmethod::fix_oop_relocations`.
 #[cfg(not(any(target_arch = "x86", target_arch = "x86_64")))]
 impl<const COMPRESSED: bool> OpenJDKSlot<COMPRESSED> {
     fn read_raw<T, const UNTAG: bool>(&self) -> T {
-        debug_assert!(!COMPRESSED);
         unsafe { self.slot_address::<UNTAG>().to_ptr::<T>().read() }
     }
 
     fn write_raw<T, const UNTAG: bool>(&self, v: T) {
-        debug_assert!(!COMPRESSED);
         unsafe { self.slot_address::<UNTAG>().to_mut_ptr::<T>().write(v) }
     }
 }

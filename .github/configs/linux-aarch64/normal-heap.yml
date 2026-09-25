@@ -1,11 +1,17 @@
 includes:
   - "../base.yml"
 
-# Only a subset of plans are tested on aarch64 for now. Add more plans here (and their expected results
-# in ci-expected-results.yml) as they get supported.
-# Compressed oops are not supported on aarch64 yet, so every config uses `no_compressed_oops`.
+# We test all the plans that are tested on x86_64 except ConcurrentImmix and LXR, which are not yet
+# supported on aarch64. Add them here (and their expected results in ci-expected-results.yml) once supported.
 configs:
-  - "jdk21-master|dacapochopin_jdk21|ms|s|fail_on_oom|tph|preserve|no_compressed_oops|mmtk_gc-Immix"
+  - "jdk21-master|dacapochopin_jdk21|ms|s|fail_on_oom|tph|preserve|mmtk_gc-SemiSpace"
+  - "jdk21-master|dacapochopin_jdk21|ms|s|fail_on_oom|tph|preserve|mmtk_gc-GenCopy"
+  - "jdk21-master|dacapochopin_jdk21|ms|s|fail_on_oom|tph|preserve|mmtk_gc-Immix"
+  - "jdk21-master|dacapochopin_jdk21|ms|s|fail_on_oom|tph|preserve|mmtk_gc-GenImmix"
+  - "jdk21-master|dacapochopin_jdk21|ms|s|fail_on_oom|tph|preserve|mmtk_gc-StickyImmix"
+  - "jdk21-master|dacapochopin_jdk21|ms|s|fail_on_oom|tph|preserve|mmtk_gc-MarkSweep"
+  - "jdk21-master|dacapochopin_jdk21|ms|s|fail_on_oom|tph|preserve|mmtk_gc-Lisp2"
+  - "jdk21-master|dacapochopin_jdk21|ms|s|fail_on_oom|tph|preserve|mmtk_gc-OVC"
 
 # This will be expanded in CI when we run with the config. Keep a new line at the end.
 benchmarks:

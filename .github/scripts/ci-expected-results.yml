@@ -421,83 +421,350 @@ results:
         OVC: pass
         ConcurrentImmix: pass
         LXR: pass
-  # Only a subset of plans are tested on aarch64 for now. See .github/configs/linux-aarch64.
+  # ConcurrentImmix and LXR are not supported on aarch64 yet. See .github/configs/linux-aarch64.
+  # The initial values are copied from linux-x86_64.
   linux-aarch64:
     fastdebug:
       avrora:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       batik:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       biojava:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       cassandra:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: ignore
+        OVC: ignore
       eclipse:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: pass
+        OVC: pass
       fop:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: pass
+        OVC: pass
       graphchi:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       h2:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: pass
+        OVC: pass
       h2o:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       jme:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       jython:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: pass
+        OVC: pass
       kafka:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: ignore
+        OVC: pass
       luindex:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       lusearch:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: ignore
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       pmd:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       sunflow:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       tomcat:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       xalan:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: ignore
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       zxing:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
     release:
       avrora:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       batik:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       biojava:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       cassandra:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: pass
+        OVC: pass
       eclipse:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: pass
+        OVC: pass
       fop:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: pass
+        OVC: pass
       graphchi:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       h2:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: pass
+        OVC: pass
       h2o:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: pass
+        OVC: pass
       jme:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       jython:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: ignore
+        Lisp2: pass
+        OVC: pass
       kafka:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       luindex:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       lusearch:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       pmd:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       sunflow:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       tomcat:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: ignore
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       xalan:
+        SemiSpace: ignore
+        GenCopy: ignore
         Immix: pass
+        GenImmix: ignore
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
       zxing:
+        SemiSpace: pass
+        GenCopy: pass
         Immix: pass
+        GenImmix: pass
+        StickyImmix: pass
+        MarkSweep: pass
+        Lisp2: pass
+        OVC: pass
