@@ -150,7 +150,11 @@ impl<const COMPRESSED: bool> OpenJDKSlot<COMPRESSED> {
     }
 
     fn write_raw<T, const UNTAG: bool>(&self, v: T) {
-        unsafe { self.slot_address::<UNTAG>().to_mut_ptr::<T>().write_unaligned(v) }
+        unsafe {
+            self.slot_address::<UNTAG>()
+                .to_mut_ptr::<T>()
+                .write_unaligned(v)
+        }
     }
 }
 
