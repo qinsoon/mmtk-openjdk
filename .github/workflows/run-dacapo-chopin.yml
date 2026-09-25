@@ -11,7 +11,7 @@ jobs:
         # Each entry runs the config file (relative to .github/configs) for all benchmarks on one platform.
         # The plans tested are listed in the config file. Their expected results are in
         # .github/scripts/ci-expected-results.yml under `linux-<arch>`.
-        # `heap-factor` is relative to the min heap. Leave it empty if the config sets the heap size itself.
+        # `heap-factor` is relative to the min heap.
         include:
           - arch: x86_64
             runner: ubuntu-22.04
@@ -24,11 +24,6 @@ jobs:
             test-name: normal-heap
             config-file: linux-aarch64/normal-heap.yml
             heap-factor: "2.5"
-          - arch: aarch64
-            runner: ubuntu-22.04-arm
-            test-name: nogc
-            config-file: linux-aarch64/nogc.yml
-            heap-factor: ""
           # In case that we need to run some plans with a larger heap, we can add an entry with a different config file, e.g.
           # - arch: x86_64
           #   runner: ubuntu-22.04

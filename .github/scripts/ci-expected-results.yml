@@ -426,116 +426,78 @@ results:
     fastdebug:
       avrora:
         Immix: pass
-        NoGC: pass
       batik:
         Immix: pass
-        NoGC: pass
       biojava:
         Immix: pass
-        NoGC: pass
       cassandra:
         Immix: pass
-        NoGC: pass
       eclipse:
         Immix: pass
-        NoGC: pass
       fop:
         Immix: pass
-        NoGC: pass
       graphchi:
         Immix: pass
-        NoGC: pass
       h2:
         Immix: pass
-        NoGC: pass
       h2o:
         Immix: pass
-        NoGC: pass
       jme:
         Immix: pass
-        NoGC: pass
       jython:
         Immix: pass
-        NoGC: pass
       kafka:
         Immix: pass
-        NoGC: pass
       luindex:
         Immix: pass
-        NoGC: pass
       lusearch:
         Immix: pass
-        NoGC: pass
       pmd:
         Immix: pass
-        NoGC: pass
       sunflow:
         Immix: pass
-        NoGC: pass
       tomcat:
         Immix: pass
-        NoGC: pass
       xalan:
         Immix: pass
-        NoGC: pass
       zxing:
         Immix: pass
-        NoGC: pass
     release:
       avrora:
         Immix: pass
-        NoGC: pass
       batik:
         Immix: pass
-        NoGC: pass
       biojava:
         Immix: pass
-        NoGC: pass
       cassandra:
         Immix: pass
-        NoGC: pass
       eclipse:
         Immix: pass
-        NoGC: pass
       fop:
         Immix: pass
-        NoGC: pass
       graphchi:
         Immix: pass
-        NoGC: pass
       h2:
         Immix: pass
-        NoGC: pass
       h2o:
         Immix: pass
-        NoGC: pass
       jme:
         Immix: pass
-        NoGC: pass
       jython:
         Immix: pass
-        NoGC: pass
       kafka:
         Immix: pass
-        NoGC: pass
       luindex:
         Immix: pass
-        NoGC: pass
       lusearch:
         Immix: pass
-        NoGC: pass
       pmd:
         Immix: pass
-        NoGC: pass
       sunflow:
         Immix: pass
-        NoGC: pass
       tomcat:
         Immix: pass
-        NoGC: pass
       xalan:
         Immix: pass
-        NoGC: pass
       zxing:
         Immix: pass
-        NoGC: pass

@@ -20,10 +20,9 @@ on:
         required: true
         type: string
       heap-factor:
-        description: 'Heap factor relative to min heap. Leave empty to run without -s (the config sets the heap size)'
-        required: false
+        description: 'Heap factor relative to min heap'
+        required: true
         type: string
-        default: ''
 
 env:
   # Minimal variant (~1.4GB) instead of the full zip (~6.3GB).
@@ -152,20 +151,15 @@ jobs:
           popd
       - name: Check free space
         run: df -h
-      - name: Run ${{ env.DACAPO_VERSION }} ${{ matrix.benchmark }} on MMTk OpenJDK ${{ matrix.debug-level }} (linux-${{ inputs.arch }}, ${{ inputs.test-name }})
+      - name: Run ${{ env.DACAPO_VERSION }} ${{ matrix.benchmark }} on MMTk OpenJDK ${{ matrix.debug-level }} with ${{ inputs.heap-factor }}x Lisp2 minheap (linux-${{ inputs.arch }}, ${{ inputs.test-name }})
         run: |
           DACAPO_PATH=`realpath ./dacapo`
           OPENJDK_HOME=`realpath ./bundles/jdk`
           sed -i "s;DACAPO_PATH;$DACAPO_PATH;g" .github/configs/base.yml
           sed -i "s;OPENJDK_HOME;$OPENJDK_HOME;g" .github/configs/base.yml
           echo "    - ${{ matrix.benchmark }}" >> .github/configs/${{ inputs.config-file }}
-          # With a heap factor, heap sizes are ${{ inputs.heap-factor }}x Lisp2 minheap. Without, the config sets the heap size.
-          HEAP_ARGS=""
-          if [ -n "${{ inputs.heap-factor }}" ]; then
-            HEAP_ARGS="-s ${{ inputs.heap-factor }}"
-          fi
           set -o pipefail
-          running runbms /tmp .github/configs/${{ inputs.config-file }} $HEAP_ARGS -p linux-${{ inputs.arch }}-${{ inputs.test-name }}-${{ matrix.benchmark }}-${{ matrix.debug-level }} | tee /tmp/running.stdout
+          running runbms /tmp .github/configs/${{ inputs.config-file }} -s ${{ inputs.heap-factor }} -p linux-${{ inputs.arch }}-${{ inputs.test-name }}-${{ matrix.benchmark }}-${{ matrix.debug-level }} | tee /tmp/running.stdout
       - name: Extract running run id
         id: extract-running-run-id
         run: |
