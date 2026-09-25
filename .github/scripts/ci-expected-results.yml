@@ -421,7 +421,6 @@ results:
         OVC: pass
         ConcurrentImmix: pass
         LXR: pass
-  # LXR is not supported on aarch64 yet. See .github/configs/linux-aarch64.
   # The initial values are copied from linux-x86_64.
   linux-aarch64:
     fastdebug:
@@ -435,6 +434,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       batik:
         SemiSpace: pass
         GenCopy: pass
@@ -445,6 +445,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       biojava:
         SemiSpace: pass
         GenCopy: pass
@@ -455,6 +456,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       cassandra:
         SemiSpace: pass
         GenCopy: pass
@@ -465,6 +467,7 @@ results:
         Lisp2: ignore
         OVC: ignore
         ConcurrentImmix: ignore
+        LXR: pass
       eclipse:
         SemiSpace: pass
         GenCopy: pass
@@ -475,6 +478,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       fop:
         SemiSpace: pass
         GenCopy: pass
@@ -485,6 +489,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       graphchi:
         SemiSpace: pass
         GenCopy: pass
@@ -495,6 +500,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       h2:
         SemiSpace: pass
         GenCopy: pass
@@ -505,6 +511,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       h2o:
         SemiSpace: pass
         GenCopy: pass
@@ -515,6 +522,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       jme:
         SemiSpace: pass
         GenCopy: pass
@@ -525,6 +533,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       jython:
         SemiSpace: pass
         GenCopy: pass
@@ -535,6 +544,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       kafka:
         SemiSpace: pass
         GenCopy: pass
@@ -545,6 +555,7 @@ results:
         Lisp2: ignore
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       luindex:
         SemiSpace: pass
         GenCopy: pass
@@ -555,6 +566,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       lusearch:
         SemiSpace: pass
         GenCopy: pass
@@ -565,6 +577,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       pmd:
         SemiSpace: pass
         GenCopy: pass
@@ -575,6 +588,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       sunflow:
         SemiSpace: pass
         GenCopy: pass
@@ -585,6 +599,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       tomcat:
         SemiSpace: pass
         GenCopy: pass
@@ -595,6 +610,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       xalan:
         SemiSpace: pass
         GenCopy: pass
@@ -605,6 +621,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       zxing:
         SemiSpace: pass
         GenCopy: pass
@@ -615,6 +632,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
     release:
       avrora:
         SemiSpace: pass
@@ -626,6 +644,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       batik:
         SemiSpace: pass
         GenCopy: pass
@@ -636,6 +655,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       biojava:
         SemiSpace: pass
         GenCopy: pass
@@ -646,6 +666,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       cassandra:
         SemiSpace: pass
         GenCopy: pass
@@ -656,6 +677,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       eclipse:
         SemiSpace: pass
         GenCopy: pass
@@ -666,6 +688,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       fop:
         SemiSpace: pass
         GenCopy: pass
@@ -676,6 +699,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       graphchi:
         SemiSpace: pass
         GenCopy: pass
@@ -686,6 +710,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       h2:
         SemiSpace: pass
         GenCopy: pass
@@ -696,6 +721,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       h2o:
         SemiSpace: pass
         GenCopy: pass
@@ -706,6 +732,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       jme:
         SemiSpace: pass
         GenCopy: pass
@@ -716,6 +743,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       jython:
         SemiSpace: pass
         GenCopy: pass
@@ -726,6 +754,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       kafka:
         SemiSpace: pass
         GenCopy: pass
@@ -736,6 +765,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       luindex:
         SemiSpace: pass
         GenCopy: pass
@@ -746,6 +776,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       lusearch:
         SemiSpace: pass
         GenCopy: pass
@@ -756,6 +787,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       pmd:
         SemiSpace: pass
         GenCopy: pass
@@ -766,6 +798,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       sunflow:
         SemiSpace: pass
         GenCopy: pass
@@ -776,6 +809,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       tomcat:
         SemiSpace: pass
         GenCopy: pass
@@ -786,6 +820,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       xalan:
         SemiSpace: ignore
         GenCopy: ignore
@@ -796,6 +831,7 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass
       zxing:
         SemiSpace: pass
         GenCopy: pass
@@ -806,3 +842,4 @@ results:
         Lisp2: pass
         OVC: pass
         ConcurrentImmix: pass
+        LXR: pass

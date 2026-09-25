@@ -58,9 +58,7 @@ runbms_dacapo2006_with_heap_size luindex 1000 1000
 
 # --- LXR ---
 
-if [ "$TEST_LXR" = "1" ]; then
-    export MMTK_PLAN=LXR
-    export MMTK_NO_REFERENCE_TYPES=true
-    run_subset 4
-    unset MMTK_NO_REFERENCE_TYPES
-fi
+export MMTK_PLAN=LXR
+export MMTK_NO_REFERENCE_TYPES=true
+run_subset 4
+unset MMTK_NO_REFERENCE_TYPES

@@ -9,16 +9,6 @@ OPENJDK_PATH=${OPENJDK_PATH:="$BINDING_PATH/repos/openjdk"}
 # For the platforms we support (x86_64 and aarch64), this is the same as `uname -m`.
 OPENJDK_ARCH=${OPENJDK_ARCH:=$(uname -m)}
 
-# Whether to run tests for LXR. LXR uses the field barrier, which is only implemented on x86_64
-# (see openjdk/cpu/aarch64/mmtkFieldBarrierSetAssembler_aarch64.hpp). Set TEST_LXR=1 or 0 to override.
-if [ -z "${TEST_LXR:-}" ]; then
-    if [ "$OPENJDK_ARCH" = "x86_64" ]; then
-        TEST_LXR=1
-    else
-        TEST_LXR=0
-    fi
-fi
-
 # dacapo2006 min heap for mark compact
 MINHEAP_ANTLR=5
 MINHEAP_FOP=13
