@@ -421,7 +421,7 @@ results:
         OVC: pass
         ConcurrentImmix: pass
         LXR: pass
-  # ConcurrentImmix and LXR are not supported on aarch64 yet. See .github/configs/linux-aarch64.
+  # LXR is not supported on aarch64 yet. See .github/configs/linux-aarch64.
   # The initial values are copied from linux-x86_64.
   linux-aarch64:
     fastdebug:
@@ -434,6 +434,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       batik:
         SemiSpace: pass
         GenCopy: pass
@@ -443,6 +444,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       biojava:
         SemiSpace: pass
         GenCopy: pass
@@ -452,6 +454,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       cassandra:
         SemiSpace: pass
         GenCopy: pass
@@ -461,6 +464,7 @@ results:
         MarkSweep: ignore
         Lisp2: ignore
         OVC: ignore
+        ConcurrentImmix: ignore
       eclipse:
         SemiSpace: pass
         GenCopy: pass
@@ -470,6 +474,7 @@ results:
         MarkSweep: ignore
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       fop:
         SemiSpace: pass
         GenCopy: pass
@@ -479,6 +484,7 @@ results:
         MarkSweep: ignore
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       graphchi:
         SemiSpace: pass
         GenCopy: pass
@@ -488,6 +494,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       h2:
         SemiSpace: pass
         GenCopy: pass
@@ -497,6 +504,7 @@ results:
         MarkSweep: ignore
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       h2o:
         SemiSpace: pass
         GenCopy: pass
@@ -506,6 +514,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       jme:
         SemiSpace: pass
         GenCopy: pass
@@ -515,6 +524,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       jython:
         SemiSpace: pass
         GenCopy: pass
@@ -524,6 +534,7 @@ results:
         MarkSweep: ignore
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       kafka:
         SemiSpace: pass
         GenCopy: pass
@@ -533,6 +544,7 @@ results:
         MarkSweep: pass
         Lisp2: ignore
         OVC: pass
+        ConcurrentImmix: pass
       luindex:
         SemiSpace: pass
         GenCopy: pass
@@ -542,6 +554,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       lusearch:
         SemiSpace: pass
         GenCopy: pass
@@ -551,6 +564,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       pmd:
         SemiSpace: pass
         GenCopy: pass
@@ -560,6 +574,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       sunflow:
         SemiSpace: pass
         GenCopy: pass
@@ -569,6 +584,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       tomcat:
         SemiSpace: pass
         GenCopy: pass
@@ -578,6 +594,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       xalan:
         SemiSpace: pass
         GenCopy: pass
@@ -587,6 +604,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       zxing:
         SemiSpace: pass
         GenCopy: pass
@@ -596,6 +614,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
     release:
       avrora:
         SemiSpace: pass
@@ -606,6 +625,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       batik:
         SemiSpace: pass
         GenCopy: pass
@@ -615,6 +635,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       biojava:
         SemiSpace: pass
         GenCopy: pass
@@ -624,6 +645,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       cassandra:
         SemiSpace: pass
         GenCopy: pass
@@ -633,6 +655,7 @@ results:
         MarkSweep: ignore
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       eclipse:
         SemiSpace: pass
         GenCopy: pass
@@ -642,6 +665,7 @@ results:
         MarkSweep: ignore
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       fop:
         SemiSpace: pass
         GenCopy: pass
@@ -651,6 +675,7 @@ results:
         MarkSweep: ignore
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       graphchi:
         SemiSpace: pass
         GenCopy: pass
@@ -660,6 +685,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       h2:
         SemiSpace: pass
         GenCopy: pass
@@ -669,6 +695,7 @@ results:
         MarkSweep: ignore
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       h2o:
         SemiSpace: pass
         GenCopy: pass
@@ -678,6 +705,7 @@ results:
         MarkSweep: ignore
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       jme:
         SemiSpace: pass
         GenCopy: pass
@@ -687,6 +715,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       jython:
         SemiSpace: pass
         GenCopy: pass
@@ -696,6 +725,7 @@ results:
         MarkSweep: ignore
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       kafka:
         SemiSpace: pass
         GenCopy: pass
@@ -705,6 +735,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       luindex:
         SemiSpace: pass
         GenCopy: pass
@@ -714,6 +745,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       lusearch:
         SemiSpace: pass
         GenCopy: pass
@@ -723,6 +755,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       pmd:
         SemiSpace: pass
         GenCopy: pass
@@ -732,6 +765,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       sunflow:
         SemiSpace: pass
         GenCopy: pass
@@ -741,6 +775,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       tomcat:
         SemiSpace: pass
         GenCopy: pass
@@ -750,6 +785,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       xalan:
         SemiSpace: ignore
         GenCopy: ignore
@@ -759,6 +795,7 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass
       zxing:
         SemiSpace: pass
         GenCopy: pass
@@ -768,3 +805,4 @@ results:
         MarkSweep: pass
         Lisp2: pass
         OVC: pass
+        ConcurrentImmix: pass

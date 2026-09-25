@@ -26,7 +26,8 @@ struct MMTkC1FieldBarrierStub;
 //   store_at compresses `val` in place.
 // - load_at: the weak reference load barrier. Call load_reference_call on non-null oops loaded
 //   with ON_WEAK_OOP_REF/ON_PHANTOM_OOP_REF while CONCURRENT_MARKING_ACTIVE is set.
-//   MMTkSATBBarrierSetAssembler::load_at for aarch64 already does the same thing.
+//   MMTkSATBBarrierSetAssembler::load_at for aarch64 already does the same thing. Note that LR may
+//   be live there (the interpreter's Reference.get entry), so save it with enter/leave around the call.
 // - arraycopy_prologue: call object_reference_array_copy_pre_call for oop arrays (note the aarch64
 //   signature, as in MMTkSATBBarrierSetAssembler).
 // - generate_c1_pre_write_barrier_stub: the C1 slow-path stub. When the field needs patching,
