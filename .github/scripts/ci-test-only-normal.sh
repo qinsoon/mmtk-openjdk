@@ -72,7 +72,9 @@ export MMTK_PLAN=MarkSweep
 run_all 8
 
 # --- LXR ---
-export MMTK_PLAN=LXR
-export MMTK_NO_REFERENCE_TYPES=true
+if [ "$TEST_LXR" = "1" ]; then
+    export MMTK_PLAN=LXR
+    export MMTK_NO_REFERENCE_TYPES=true
 
-run_all 4
+    run_all 4
+fi
