@@ -113,6 +113,9 @@ public:
   virtual void object_reference_array_copy_post(oop* src, oop* dst, size_t count) const {};
   /// Called before `src` is cloned into the newly allocated `dst` (`Object.clone`).
   virtual void object_clone_pre(oop src, oop dst) const {};
+  /// Called before `value` is stored into a location outside the heap (a VM root, e.g. an
+  /// OopStorage handle), through `oop_store_not_in_heap` and the not-in-heap atomics.
+  virtual void object_reference_write_not_in_heap(oop value) const {};
   /// java.lang.Reference load barrier
   virtual void load_reference(DecoratorSet decorators, oop value) const {};
   /// Called at the end of every C2 slowpath allocation.
@@ -222,6 +225,25 @@ public:
         runtime()->load_reference(decorators, value);
       }
       return value;
+    }
+
+    // Stores into VM roots (off-heap).  Barriers that need it see the new value first.
+    template <typename T>
+    static void oop_store_not_in_heap(T* addr, oop value) {
+      runtime()->object_reference_write_not_in_heap(value);
+      Raw::oop_store(addr, value);
+    }
+
+    template <typename T>
+    static oop oop_atomic_cmpxchg_not_in_heap(T* addr, oop compare_value, oop new_value) {
+      runtime()->object_reference_write_not_in_heap(new_value);
+      return Raw::oop_atomic_cmpxchg(addr, compare_value, new_value);
+    }
+
+    template <typename T>
+    static oop oop_atomic_xchg_not_in_heap(T* addr, oop new_value) {
+      runtime()->object_reference_write_not_in_heap(new_value);
+      return Raw::oop_atomic_xchg(addr, new_value);
     }
 
     // Defensive: will catch weak oops at addresses in heap

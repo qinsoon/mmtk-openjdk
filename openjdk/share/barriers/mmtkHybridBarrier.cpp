@@ -85,6 +85,17 @@ void MMTkHybridBarrierSetRuntime::object_probable_write(oop new_obj) const {
   // that needs shading.
 }
 
+void MMTkHybridBarrierSetRuntime::object_reference_write_not_in_heap(oop value) const {
+  // Stores into VM roots (OopStorage handles such as JNI global refs, and other off-heap oops).
+  // VM roots are scanned once, when marking starts, so an object stored into one later must be
+  // shaded, or it is lost if the (not yet scanned) stack that held it drops it.  Only the new value
+  // needs shading: the root was scanned, so the old value is already marked.
+  if (value != NULL && is_active()) {
+    void* obj = (void*) value;
+    ::mmtk_shade_objects(&obj, 1);
+  }
+}
+
 void MMTkHybridBarrierSetRuntime::load_reference(DecoratorSet decorators, oop value) const {
   if (mmtk_enable_reference_load_barrier && value != NULL && is_active()) {
     ::mmtk_load_reference(current_mutator(), (void*) value);

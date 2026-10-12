@@ -54,6 +54,7 @@ public:
   virtual void object_reference_array_copy_pre_dst_uninitialized(oop* src, oop* dst, size_t count) const override;
   virtual void object_clone_pre(oop src, oop dst) const override;
   virtual void object_probable_write(oop new_obj) const override;
+  virtual void object_reference_write_not_in_heap(oop value) const override;
   virtual void load_reference(DecoratorSet decorators, oop value) const override;
 };
 
