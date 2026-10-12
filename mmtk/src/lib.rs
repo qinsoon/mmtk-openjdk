@@ -118,6 +118,8 @@ pub struct OpenJDK_Upcalls {
     pub enqueue_references: extern "C" fn(objects: *const ObjectReference, len: usize),
     pub fix_oop_relocations: extern "C" fn(lxr: bool, nmethods: *mut libc::c_void, len: usize),
     pub gc_epilogue: extern "C" fn(),
+    pub scan_roots_in_mutator_threads_concurrently: extern "C" fn(closure: SlotsClosure),
+    pub flush_mutators_concurrently: extern "C" fn(),
 }
 
 pub static mut UPCALLS: *const OpenJDK_Upcalls = null_mut();

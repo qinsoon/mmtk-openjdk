@@ -189,6 +189,8 @@ typedef struct {
     void (*enqueue_references)(void** objects, size_t len);
     void (*fix_oop_relocations)(bool lxr, void* nmethods, size_t len);
     void (*gc_epilogue)();
+    void (*scan_roots_in_mutator_threads_concurrently)(SlotsClosure closure);
+    void (*flush_mutators_concurrently)();
 } OpenJDK_Upcalls;
 
 extern void openjdk_gc_init(OpenJDK_Upcalls *calls);

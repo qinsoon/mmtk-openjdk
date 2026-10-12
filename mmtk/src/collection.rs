@@ -80,4 +80,14 @@ impl<const COMPRESSED: bool> Collection<OpenJDK<COMPRESSED>> for VMCollection {
             ((*UPCALLS).gc_epilogue)();
         }
     }
+
+    fn supports_concurrent_mutator_flush() -> bool {
+        true
+    }
+
+    fn flush_mutators_concurrently(_tls: VMWorkerThread) {
+        unsafe {
+            ((*UPCALLS).flush_mutators_concurrently)();
+        }
+    }
 }
