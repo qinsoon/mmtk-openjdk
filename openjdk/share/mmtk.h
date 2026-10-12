@@ -26,6 +26,8 @@ extern const uintptr_t IMMIX_ALLOCATOR_SIZE;
 extern uint8_t RC_ENABLED;
 extern const size_t MMTK_LISP2_HEADER_RESERVED_IN_BYTES;
 extern const uintptr_t FREE_LIST_ALLOCATOR_SIZE;
+extern const uintptr_t SPAN_ALLOCATOR_SIZE;
+extern const uintptr_t MUTATOR_SIZE;
 extern uint8_t CONCURRENT_MARKING_ACTIVE;
 
 extern const char* get_mmtk_version();
@@ -92,6 +94,7 @@ struct AllocatorSelector {
 #define TAG_IMMIX                     3
 #define TAG_LISP2                     4
 #define TAG_FREE_LIST                 5
+#define TAG_SPAN                      6
 
 extern AllocatorSelector get_allocator_mapping(int allocator);
 extern size_t get_max_non_los_default_alloc_bytes();

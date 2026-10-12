@@ -71,7 +71,7 @@ void MMTkBarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register threa
       __ jcc(Assembler::aboveEqual, slow_case);
     }
 
-    if (selector.tag == TAG_MALLOC || selector.tag == TAG_LARGE_OBJECT || selector.tag == TAG_FREE_LIST) {
+    if (selector.tag == TAG_MALLOC || selector.tag == TAG_LARGE_OBJECT || selector.tag == TAG_FREE_LIST || selector.tag == TAG_SPAN) {
       __ jmp(slow_case);
       return;
     }

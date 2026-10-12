@@ -156,6 +156,15 @@ pub static IMMIX_ALLOCATOR_SIZE: uintptr_t =
     std::mem::size_of::<mmtk::util::alloc::ImmixAllocator<OpenJDK<false>>>();
 
 #[no_mangle]
+pub static SPAN_ALLOCATOR_SIZE: uintptr_t =
+    std::mem::size_of::<mmtk::util::alloc::SpanAllocator<OpenJDK<false>>>();
+
+/// The size of the whole `Mutator`, checked against the C++ mirror `MMTkMutatorContext` when a
+/// mutator is bound, so that the two layouts cannot drift apart silently.
+#[no_mangle]
+pub static MUTATOR_SIZE: uintptr_t = std::mem::size_of::<mmtk::Mutator<OpenJDK<false>>>();
+
+#[no_mangle]
 pub static mut CONCURRENT_MARKING_ACTIVE: u8 = 0;
 
 #[no_mangle]
