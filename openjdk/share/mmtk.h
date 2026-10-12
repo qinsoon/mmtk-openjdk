@@ -191,6 +191,8 @@ typedef struct {
     void (*gc_epilogue)();
     void (*scan_roots_in_mutator_threads_concurrently)(SlotsClosure closure);
     void (*flush_mutators_concurrently)();
+    void (*block_mutator_until)(bool (*check)(void* data), void* data);
+    void (*wake_blocked_mutators)();
 } OpenJDK_Upcalls;
 
 extern void openjdk_gc_init(OpenJDK_Upcalls *calls);

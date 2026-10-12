@@ -416,6 +416,24 @@ static void mmtk_flush_mutators_concurrently() {
   Handshake::execute(&cl);
 }
 
+// Blocks the current Java thread until `check(data)` returns true (ConcurrentSpan's mark
+// assists).  Like `mmtk_block_for_gc`, the thread is blocked in the VM, so safepoints and
+// handshakes proceed while it waits.  The condition is re-checked when
+// `mmtk_wake_blocked_mutators` is called, and at least every millisecond.
+static void mmtk_block_mutator_until(bool (*check)(void* data), void* data) {
+  JavaThread* thread = JavaThread::current();
+  ThreadBlockInVM tbivm(thread);
+  MutexLocker locker(MMTkHeap::heap()->gc_lock(), Mutex::_no_safepoint_check_flag);
+  while (!check(data)) {
+    MMTkHeap::heap()->gc_lock()->wait_without_safepoint_check(1);
+  }
+}
+
+static void mmtk_wake_blocked_mutators() {
+  MutexLocker locker(MMTkHeap::heap()->gc_lock(), Mutex::_no_safepoint_check_flag);
+  MMTkHeap::heap()->gc_lock()->notify_all();
+}
+
 static void mmtk_scan_object(void* trace, void* object, void* tls) {
   MMTkScanObjectClosure cl(trace);
   ((oop) object)->oop_iterate(&cl);
@@ -628,4 +646,6 @@ OpenJDK_Upcalls mmtk_upcalls = {
   mmtk_gc_epilogue,
   mmtk_scan_roots_in_mutator_threads_concurrently,
   mmtk_flush_mutators_concurrently,
+  mmtk_block_mutator_until,
+  mmtk_wake_blocked_mutators,
 };

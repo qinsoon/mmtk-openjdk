@@ -81,6 +81,30 @@ impl<const COMPRESSED: bool> Collection<OpenJDK<COMPRESSED>> for VMCollection {
         }
     }
 
+    fn supports_blocking_mutators() -> bool {
+        true
+    }
+
+    fn block_mutator_until(_tls: VMMutatorThread, unblocked: &dyn Fn() -> bool) {
+        extern "C" fn check(data: *mut libc::c_void) -> bool {
+            let unblocked = unsafe { &*(data as *const &dyn Fn() -> bool) };
+            unblocked()
+        }
+        let unblocked: &dyn Fn() -> bool = unblocked;
+        unsafe {
+            ((*UPCALLS).block_mutator_until)(
+                check,
+                &unblocked as *const &dyn Fn() -> bool as *mut libc::c_void,
+            );
+        }
+    }
+
+    fn wake_blocked_mutators() {
+        unsafe {
+            ((*UPCALLS).wake_blocked_mutators)();
+        }
+    }
+
     fn supports_concurrent_mutator_flush() -> bool {
         true
     }
