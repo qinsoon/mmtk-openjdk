@@ -42,6 +42,7 @@
 extern bool mmtk_enable_allocation_fastpath;
 extern bool mmtk_enable_barrier_fastpath;
 extern bool mmtk_enable_reference_load_barrier;
+extern bool mmtk_enable_span_allocation_fastpath;
 
 inline intptr_t field_unlog_bits_base_address() {
   return static_cast<intptr_t>(get_global_side_metadata_vm_base_address());
@@ -68,6 +69,21 @@ struct MMTkAllocatorOffsets {
  * @return the offsets to the top and end of the TLAB
  */
 MMTkAllocatorOffsets get_tlab_top_and_end_offsets(AllocatorSelector selector);
+
+/**
+ * The SpanAllocator inline fast path (Go's nextFreeFast) for the default allocator, or NULL if
+ * the default allocator is not a SpanAllocator or the fast path is disabled
+ * (MMTK_ENABLE_SPAN_ALLOCATION_FASTPATH=false). Offsets named `*_offset` relative to the mutator
+ * are relative to the start of the MMTk mutator, not to the thread.
+ */
+const MMTkSpanFastPathInfo* mmtk_span_fastpath();
+
+/// The span class index for a constant allocation size (0 if none: slot 0 always holds the empty
+/// span, so the fast path fails on it).
+inline uint8_t mmtk_span_class_for_size(const MMTkSpanFastPathInfo* info, size_t size) {
+  if (size > info->max_size || (size & 7) != 0) return 0;
+  return info->size_to_span_class[size >> 3];
+}
 
 #define FN_ADDR(function) CAST_FROM_FN_PTR(address, function)
 

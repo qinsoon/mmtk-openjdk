@@ -218,6 +218,116 @@ pub extern "C" fn get_allocator_mapping(allocator: AllocationSemantics) -> Alloc
     with_singleton!(|singleton| memory_manager::get_allocator_mapping(singleton, allocator))
 }
 
+/// What an inline fast path for a `SpanAllocator` (Go's `nextFreeFast`) needs. Mirrored by
+/// `MMTkSpanFastPathInfo` in `mmtk.h`. All offsets are in bytes.
+#[repr(C)]
+pub struct SpanFastPathInfo {
+    /// Whether the allocator for the semantics is a `SpanAllocator` that allocates in scan spans
+    /// (if not, the other fields are zero).
+    pub valid: bool,
+    /// From the mutator to the allocator's array of cached spans, indexed by span class.
+    pub spans_offset: usize,
+    /// From the mutator to the allocator's space pointer.
+    pub space_offset: usize,
+    /// From the space pointer to its allocate-black flag (a byte).
+    pub allocate_black_offset: usize,
+    /// Fields of a span descriptor.
+    pub alloc_cache_offset: usize,
+    pub freeindex_offset: usize,
+    pub nelems_offset: usize,
+    pub elemsize_offset: usize,
+    pub start_offset: usize,
+    pub alloc_count_offset: usize,
+    pub needzero_offset: usize,
+    /// `size_to_span_class[size >> 3]` is the span class index for an allocation of `size` bytes
+    /// (a multiple of 8, at most `max_size`) aligned to 8 bytes. 0 (an unused class whose slot
+    /// always holds the empty span) if no small class fits.
+    pub size_to_span_class: *const u8,
+    pub max_size: usize,
+}
+
+/// Largest size in the span class table: Go's largest small size class.
+const SPAN_TABLE_MAX_SIZE: usize = 32768;
+
+static SPAN_CLASS_TABLE: sync::Lazy<Box<[u8]>> = sync::Lazy::new(|| {
+    use mmtk::util::alloc::span_allocator::span_class_index;
+    (0..=SPAN_TABLE_MAX_SIZE >> 3)
+        .map(|i| {
+            // OpenJDK allocates with an alignment of one heap word and no offset (see
+            // `MMTkMutatorContext::alloc`), from the scan spans of the default allocator.
+            let index = span_class_index(i << 3, 8, false).unwrap_or(0);
+            u8::try_from(index).expect("span class index does not fit in a byte")
+        })
+        .collect()
+});
+
+/// Fill `info` for the allocator of `semantics`.
+///
+/// # Safety
+/// `info` must point to a writable `SpanFastPathInfo`.
+#[no_mangle]
+pub unsafe extern "C" fn mmtk_span_fastpath_info(
+    semantics: AllocationSemantics,
+    info: *mut SpanFastPathInfo,
+) {
+    use mmtk::util::alloc::AllocatorInfo;
+    let selector = get_allocator_mapping(semantics);
+    let alloc_info = if crate::use_compressed_oops() {
+        AllocatorInfo::new::<OpenJDK<true>>(selector)
+    } else {
+        AllocatorInfo::new::<OpenJDK<false>>(selector)
+    };
+    let result = match (selector, alloc_info) {
+        // Only the scan allocator: `SpanAllocator`s other than the first are noscan in the plans
+        // that have them, and OpenJDK never uses NoScan.
+        (
+            AllocatorSelector::Span(0),
+            AllocatorInfo::Span {
+                spans_offset,
+                space_offset,
+                allocate_black_offset,
+                alloc_cache_offset,
+                freeindex_offset,
+                nelems_offset,
+                elemsize_offset,
+                start_offset,
+                alloc_count_offset,
+                needzero_offset,
+            },
+        ) => SpanFastPathInfo {
+            valid: true,
+            spans_offset,
+            space_offset,
+            allocate_black_offset,
+            alloc_cache_offset,
+            freeindex_offset,
+            nelems_offset,
+            elemsize_offset,
+            start_offset,
+            alloc_count_offset,
+            needzero_offset,
+            size_to_span_class: SPAN_CLASS_TABLE.as_ptr(),
+            max_size: SPAN_TABLE_MAX_SIZE,
+        },
+        _ => SpanFastPathInfo {
+            valid: false,
+            spans_offset: 0,
+            space_offset: 0,
+            allocate_black_offset: 0,
+            alloc_cache_offset: 0,
+            freeindex_offset: 0,
+            nelems_offset: 0,
+            elemsize_offset: 0,
+            start_offset: 0,
+            alloc_count_offset: 0,
+            needzero_offset: 0,
+            size_to_span_class: std::ptr::null(),
+            max_size: 0,
+        },
+    };
+    info.write(result);
+}
+
 #[no_mangle]
 pub extern "C" fn get_max_non_los_default_alloc_bytes() -> usize {
     with_singleton!(|singleton| {

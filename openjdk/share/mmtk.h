@@ -103,6 +103,25 @@ struct AllocatorSelector {
 #define TAG_SPAN                      6
 
 extern AllocatorSelector get_allocator_mapping(int allocator);
+
+// Mirrors `SpanFastPathInfo` in mmtk/src/api.rs: what an inline SpanAllocator fast path needs.
+struct MMTkSpanFastPathInfo {
+    bool valid;
+    size_t spans_offset;
+    size_t space_offset;
+    size_t allocate_black_offset;
+    size_t alloc_cache_offset;
+    size_t freeindex_offset;
+    size_t nelems_offset;
+    size_t elemsize_offset;
+    size_t start_offset;
+    size_t alloc_count_offset;
+    size_t needzero_offset;
+    const uint8_t* size_to_span_class;
+    size_t max_size;
+};
+
+extern void mmtk_span_fastpath_info(int semantics, MMTkSpanFastPathInfo* info);
 extern size_t get_max_non_los_default_alloc_bytes();
 
 /**

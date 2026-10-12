@@ -107,6 +107,10 @@ public:
                               const TypeFunc* slow_call_type, // Type of slow call
                               address slow_call_address,  // Address of slow call
                               Node* valid_length_test); // whether length is valid or not
+  // The SpanAllocator fast path for expand_allocate. Returns the slow-path control.
+  static Node* expand_span_allocate(PhaseMacroExpand* x, const MMTkSpanFastPathInfo* info,
+                                    Node* ctrl, Node* mem, Node* size_in_bytes, jlong const_size,
+                                    Node*& fast_oop, Node*& fast_oop_ctrl, Node*& fast_oop_rawmem);
 };
 
 class MMTkIdealKit: public IdealKit {

@@ -32,7 +32,13 @@
 #include "opto/addnode.hpp"
 #include "opto/arraycopynode.hpp"
 #include "opto/callnode.hpp"
+#include "gc/shared/tlab_globals.hpp"
 #include "opto/compile.hpp"
+#include "opto/countbitsnode.hpp"
+#include "opto/matcher.hpp"
+#include "opto/memnode.hpp"
+#include "opto/mulnode.hpp"
+#include "opto/subnode.hpp"
 #include "opto/graphKit.hpp"
 #include "opto/idealKit.hpp"
 #include "opto/macro.hpp"
@@ -43,6 +49,108 @@
 #include "opto/type.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
+
+// The SpanAllocator fast path (Go's nextFreeFast, mmtk-core's Span::next_free_fast). See
+// MMTkBarrierSetAssembler::span_allocate (x86) for the pseudo code. Returns the control of the
+// slow path (a region merging every bail-out) and sets the fast-path result. Nothing is stored
+// before the last check.
+Node* MMTkBarrierSetC2::expand_span_allocate(PhaseMacroExpand* x, const MMTkSpanFastPathInfo* info,
+                                             Node* ctrl, Node* mem, Node* size_in_bytes, jlong const_size,
+                                             Node*& fast_oop, Node*& fast_oop_ctrl, Node*& fast_oop_rawmem) {
+  PhaseIterGVN& igvn = x->_igvn;
+  const int mutator_offset = in_bytes(JavaThread::third_party_heap_mutator_offset());
+  RegionNode* slow = new RegionNode(1);
+
+  // Raw-memory helpers. Every load is control-dependent on the allocation's control and uses its
+  // raw memory state, like the bump-pointer fast path.
+  auto adr = [&](Node* ptr, intptr_t off) -> Node* {
+    return off == 0 ? ptr : x->basic_plus_adr(x->top(), ptr, (int)off);
+  };
+  auto load = [&](Node* c, Node* ptr, intptr_t off, const Type* t, BasicType bt) -> Node* {
+    return x->transform_later(LoadNode::make(igvn, c, mem, adr(ptr, off), TypeRawPtr::BOTTOM, t, bt, MemNode::unordered));
+  };
+  auto store = [&](Node* c, Node* m, Node* ptr, intptr_t off, Node* val, BasicType bt) -> Node* {
+    return x->transform_later(StoreNode::make(igvn, c, m, adr(ptr, off), TypeRawPtr::BOTTOM, val, bt, MemNode::unordered));
+  };
+  // Branch to the slow path if `bol` holds; return the fast-path control.
+  auto bail_if = [&](Node* c, Node* bol) -> Node* {
+    IfNode* iff = new IfNode(c, bol, PROB_UNLIKELY_MAG(4), COUNT_UNKNOWN);
+    x->transform_later(iff);
+    Node* t = x->transform_later(new IfTrueNode(iff));
+    slow->add_req(t);
+    return x->transform_later(new IfFalseNode(iff));
+  };
+  auto bool_of = [&](Node* cmp, BoolTest::mask m) -> Node* {
+    x->transform_later(cmp);
+    return x->transform_later(new BoolNode(cmp, m));
+  };
+
+  Node* thread = x->transform_later(new ThreadLocalNode());
+
+  // Allocate-black: the slow path marks new objects. The flag only changes at a safepoint.
+  Node* space = load(ctrl, thread, mutator_offset + info->space_offset, TypeRawPtr::BOTTOM, T_ADDRESS);
+  Node* black = load(ctrl, space, info->allocate_black_offset, TypeInt::UBYTE, T_BOOLEAN);
+  ctrl = bail_if(ctrl, bool_of(new CmpINode(black, x->intcon(0)), BoolTest::ne));
+
+  // span = mutator.alloc[span class]
+  Node* span_slot;
+  if (const_size >= 0) {
+    int spc = mmtk_span_class_for_size(info, (size_t)const_size);
+    assert(spc != 0, "checked by the caller");
+    span_slot = adr(thread, mutator_offset + info->spans_offset + spc * wordSize);
+  } else {
+    // The size is below max_non_los_default_alloc_bytes (the initial slow test) and a multiple of 8.
+    Node* table_index = x->transform_later(new URShiftLNode(size_in_bytes, x->intcon(LogBytesPerLong)));
+    Node* table = x->transform_later(ConPNode::make((address)info->size_to_span_class));
+    Node* spc = load(ctrl, x->basic_plus_adr(x->top(), table, table_index), 0, TypeInt::UBYTE, T_BOOLEAN);
+    Node* slot_offset = x->transform_later(new LShiftLNode(x->transform_later(new ConvI2LNode(spc)), x->intcon(LogBytesPerWord)));
+    span_slot = adr(x->basic_plus_adr(x->top(), thread, slot_offset), mutator_offset + info->spans_offset);
+  }
+  Node* span = load(ctrl, span_slot, 0, TypeRawPtr::BOTTOM, T_ADDRESS);
+
+  if (ZeroTLAB) {
+    // Never the case for MMTk (UseTLAB is off, so C2 zeroes objects), but be safe.
+    Node* needzero = load(ctrl, span, info->needzero_offset, TypeInt::UBYTE, T_BOOLEAN);
+    ctrl = bail_if(ctrl, bool_of(new CmpINode(needzero, x->intcon(0)), BoolTest::ne));
+  }
+
+  // cache = span.alloc_cache; if cache == 0: slow
+  Node* cache = load(ctrl, span, info->alloc_cache_offset, TypeLong::LONG, T_LONG);
+  ctrl = bail_if(ctrl, bool_of(new CmpLNode(cache, x->longcon(0)), BoolTest::eq));
+  Node* bit = x->transform_later(new CountTrailingZerosLNode(cache));
+  // result = freeindex + bit; if result >= nelems: slow
+  Node* freeindex = load(ctrl, span, info->freeindex_offset, TypeLong::LONG, T_LONG);
+  Node* nelems = load(ctrl, span, info->nelems_offset, TypeLong::LONG, T_LONG);
+  Node* result = x->transform_later(new AddLNode(freeindex, x->transform_later(new ConvI2LNode(bit))));
+  ctrl = bail_if(ctrl, bool_of(new CmpULNode(result, nelems), BoolTest::ge));
+  // freeidx = result + 1; if freeidx % 64 == 0 && freeidx != nelems: slow
+  Node* freeidx = x->transform_later(new AddLNode(result, x->longcon(1)));
+  Node* low = x->transform_later(new AndLNode(freeidx, x->longcon(63)));
+  Node* at_word_end = bool_of(new CmpLNode(low, x->longcon(0)), BoolTest::eq);
+  // at_word_end ? freeidx : nelems
+  Node* sel = x->transform_later(new CMoveLNode(at_word_end, nelems, freeidx, TypeLong::LONG));
+  ctrl = bail_if(ctrl, bool_of(new CmpLNode(sel, nelems), BoolTest::ne));
+
+  // span.alloc_cache = cache >> (bit + 1), as two shifts so that a shift by 64 gives 0.
+  Node* shifted = x->transform_later(new URShiftLNode(cache, bit));
+  Node* new_cache = x->transform_later(new URShiftLNode(shifted, x->intcon(1)));
+  Node* count = load(ctrl, span, info->alloc_count_offset, TypeLong::LONG, T_LONG);
+  Node* m = store(ctrl, mem, span, info->alloc_cache_offset, new_cache, T_LONG);
+  m = store(ctrl, m, span, info->freeindex_offset, freeidx, T_LONG);
+  // Only the owning mutator writes the alloc_count of a cached span.
+  m = store(ctrl, m, span, info->alloc_count_offset, x->transform_later(new AddLNode(count, x->longcon(1))), T_LONG);
+
+  // obj = start + result * elemsize
+  Node* start = load(ctrl, span, info->start_offset, TypeRawPtr::BOTTOM, T_ADDRESS);
+  Node* elemsize = load(ctrl, span, info->elemsize_offset, TypeLong::LONG, T_LONG);
+  Node* offset = x->transform_later(new MulLNode(result, elemsize));
+  fast_oop = x->basic_plus_adr(x->top(), start, offset);
+  fast_oop_ctrl = ctrl;
+  fast_oop_rawmem = m;
+
+  x->transform_later(slow);
+  return slow;
+}
 
 void MMTkBarrierSetC2::expand_allocate(PhaseMacroExpand* x,
                                        AllocateNode* alloc, // allocation node to be expanded
@@ -144,9 +252,22 @@ void MMTkBarrierSetC2::expand_allocate(PhaseMacroExpand* x,
     }
   }
 
+  // The SpanAllocator fast path (ConcurrentSpan), if enabled and supported.
+  const MMTkSpanFastPathInfo* span_info = NULL;
+#ifdef AMD64
+  // Only tested on x86_64 (decision D86); other architectures take the slow path.
+  if (selector.tag == TAG_SPAN && Matcher::match_rule_supported(Op_CountTrailingZerosL)) {
+    span_info = mmtk_span_fastpath();
+  }
+#endif
+  if (span_info != NULL && const_size >= 0 && mmtk_span_class_for_size(span_info, (size_t)const_size) == 0) {
+    span_info = NULL; // No small size class: always slow (the size check above normally catches this).
+  }
+
   if (!mmtk_enable_allocation_fastpath
       // Malloc allocator has no fastpath
-      || (selector.tag == TAG_MALLOC || selector.tag == TAG_LARGE_OBJECT || selector.tag == TAG_FREE_LIST || selector.tag == TAG_SPAN)) {
+      || (selector.tag == TAG_MALLOC || selector.tag == TAG_LARGE_OBJECT || selector.tag == TAG_FREE_LIST)
+      || (selector.tag == TAG_SPAN && span_info == NULL)) {
     // Force slow-path allocation
     always_slow = true;
     initial_slow_test = NULL;
@@ -187,6 +308,28 @@ void MMTkBarrierSetC2::expand_allocate(PhaseMacroExpand* x,
       mem = mem->as_MergeMem()->memory_at(Compile::AliasIdxRaw);
     }
 
+    // Name successful fast-path variables
+    Node* fast_oop;
+    Node* fast_oop_ctrl;
+    Node* fast_oop_rawmem;
+
+    if (span_info != NULL) {
+      result_region = new RegionNode(3);
+      result_phi_rawmem = new PhiNode(result_region, Type::MEMORY, TypeRawPtr::BOTTOM);
+      result_phi_rawoop = new PhiNode(result_region, TypeRawPtr::BOTTOM);
+      result_phi_i_o    = new PhiNode(result_region, Type::ABIO);
+      // Slow-path does no I/O so just set it to the original I/O.
+      result_phi_i_o->init_req(slow_result_path, i_o);
+
+      Node* span_slow_region = expand_span_allocate(x, span_info, toobig_false, mem, size_in_bytes, const_size,
+                                                    fast_oop, fast_oop_ctrl, fast_oop_rawmem);
+      if (initial_slow_test) {
+        slow_region->init_req(need_gc_path, span_slow_region);
+        x->transform_later(slow_region);
+      } else {
+        slow_region = span_slow_region;
+      }
+    } else {
     Node* eden_top_adr;
     Node* eden_end_adr;
 
@@ -271,10 +414,7 @@ void MMTkBarrierSetC2::expand_allocate(PhaseMacroExpand* x,
     // i_o = prefetch_allocation(i_o, needgc_false, contended_phi_rawmem,
     //                           old_eden_top, new_eden_top, length);
 
-    // Name successful fast-path variables
-    Node* fast_oop = old_eden_top;
-    Node* fast_oop_ctrl;
-    Node* fast_oop_rawmem;
+    fast_oop = old_eden_top;
 
     // Store (-conditional) the modified eden top back down.
     // StorePConditional produces flags for a test PLUS a modified raw
@@ -285,6 +425,7 @@ void MMTkBarrierSetC2::expand_allocate(PhaseMacroExpand* x,
     x->transform_later(store_eden_top);
     fast_oop_ctrl = needgc_false; // No contention, so this is the fast path
     fast_oop_rawmem = store_eden_top;
+    }
 
     bool enable_vo_bit = false;
     #ifdef MMTK_ENABLE_VO_BIT

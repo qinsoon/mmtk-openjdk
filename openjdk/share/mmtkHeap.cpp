@@ -137,6 +137,10 @@ jint MMTkHeap::initialize() {
   set_bool_option_from_env_var("MMTK_ENABLE_ALLOCATION_FASTPATH", &mmtk_enable_allocation_fastpath);
   set_bool_option_from_env_var("MMTK_ENABLE_BARRIER_FASTPATH", &mmtk_enable_barrier_fastpath);
   set_bool_option_from_env_var("MMTK_ENABLE_REFERENCE_LOAD_BARRIER", &mmtk_enable_reference_load_barrier);
+  // Disables only the inline SpanAllocator fast path (ConcurrentSpan), for comparison with the
+  // slow path. Unlike MMTK_ENABLE_ALLOCATION_FASTPATH=false, it keeps C2's barrier elision for
+  // stores into new objects.
+  set_bool_option_from_env_var("MMTK_ENABLE_SPAN_ALLOCATION_FASTPATH", &mmtk_enable_span_allocation_fastpath);
 
   if (!mmtk_enable_reference_load_barrier) {
     fprintf(stderr,
