@@ -71,6 +71,12 @@ extern void mmtk_object_reference_write_slow(MMTk_Mutator mutator, void* src, vo
 /// Full array-copy pre-barrier
 extern void mmtk_array_copy_pre(MMTk_Mutator mutator, void* src, void* dst, size_t count);
 
+/// Array-copy pre-barrier that only reads the source (the destination is uninitialised)
+extern void mmtk_array_copy_pre_src_only(MMTk_Mutator mutator, void* src, void* dst, size_t count);
+
+/// Address of the global flag of the hybrid barrier (non-zero while the barrier is active)
+extern uint8_t* mmtk_barrier_active_address();
+
 /// Full array-copy post-barrier
 extern void mmtk_array_copy_post(MMTk_Mutator mutator, void* src, void* dst, size_t count);
 

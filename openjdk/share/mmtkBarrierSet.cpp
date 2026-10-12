@@ -27,6 +27,9 @@
 #include "barriers/mmtkObjectBarrier.hpp"
 #include "barriers/mmtkFieldBarrier.hpp"
 #include "barriers/mmtkSATBBarrier.hpp"
+#ifdef AMD64
+#include "barriers/mmtkHybridBarrier.hpp"
+#endif
 #include "mmtkBarrierSet.hpp"
 #include "utilities/macros.hpp"
 #include CPU_HEADER(mmtkBarrierSetAssembler)
@@ -89,6 +92,9 @@ MMTkBarrierBase* get_selected_barrier() {
   else if (strcmp(barrier, "ObjectBarrier") == 0) selected_barrier = new MMTkObjectBarrier();
   else if (strcmp(barrier, "SATBBarrier") == 0) selected_barrier = new MMTkSATBBarrier();
   else if (strcmp(barrier, "FieldBarrier") == 0) selected_barrier = new MMTkFieldBarrier();
+#ifdef AMD64
+  else if (strcmp(barrier, "HybridBarrier") == 0) selected_barrier = new MMTkHybridBarrier();
+#endif
   else guarantee(false, "Unimplemented");
   return selected_barrier;
 }

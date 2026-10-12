@@ -50,6 +50,8 @@ static OBJECT_BARRIER: sync::Lazy<CString> =
 static FIELD_LOGGING_BARRIER: sync::Lazy<CString> =
     sync::Lazy::new(|| CString::new("FieldBarrier").unwrap());
 static SATB_BARRIER: sync::Lazy<CString> = sync::Lazy::new(|| CString::new("SATBBarrier").unwrap());
+static HYBRID_BARRIER: sync::Lazy<CString> =
+    sync::Lazy::new(|| CString::new("HybridBarrier").unwrap());
 
 #[no_mangle]
 pub extern "C" fn get_mmtk_version() -> *const c_char {
@@ -64,11 +66,41 @@ pub extern "C" fn mmtk_active_barrier() -> *const c_char {
             BarrierSelector::ObjectBarrier => OBJECT_BARRIER.as_ptr(),
             BarrierSelector::FieldBarrier => FIELD_LOGGING_BARRIER.as_ptr(),
             BarrierSelector::SATBBarrier => SATB_BARRIER.as_ptr(),
+            BarrierSelector::HybridBarrier => HYBRID_BARRIER.as_ptr(),
             // In case we have more barriers in mmtk-core.
             #[allow(unreachable_patterns)]
             _ => unimplemented!(),
         }
     })
+}
+
+/// The address of the global flag of the hybrid barrier (a byte that is non-zero while the
+/// barrier is active).  Compiled code tests this byte inline.
+#[no_mangle]
+pub extern "C" fn mmtk_barrier_active_address() -> *mut u8 {
+    memory_manager::barrier_active_address().to_mut_ptr()
+}
+
+/// Debugging aid for the hybrid barrier: if `MMTK_HYBRID_BARRIER_DEBUG_ALWAYS_ON=1`, set the
+/// barrier flag once at start-up and never clear it, so that every barrier path (interpreter, C1,
+/// C2, arraycopy, clone, weak loads) calls into MMTk.  mmtk-core drops the buffered objects while
+/// no marking is in progress, so this only tests that the paths are reached and do not crash.
+fn maybe_force_hybrid_barrier_on() {
+    let force = std::env::var("MMTK_HYBRID_BARRIER_DEBUG_ALWAYS_ON").is_ok_and(|v| v == "1");
+    if !force {
+        return;
+    }
+    let barrier = with_singleton!(|singleton| singleton.get_plan().constraints().barrier);
+    if barrier != BarrierSelector::HybridBarrier {
+        log::warn!(
+            "MMTK_HYBRID_BARRIER_DEBUG_ALWAYS_ON ignored: the plan does not use HybridBarrier"
+        );
+        return;
+    }
+    let flag = memory_manager::barrier_active_address().to_ptr::<std::sync::atomic::AtomicU8>();
+    // Safety: the address is that of a static `AtomicU8` in mmtk-core.
+    unsafe { &*flag }.store(1, Ordering::SeqCst);
+    eprintln!("[mmtk-openjdk] MMTK_HYBRID_BARRIER_DEBUG_ALWAYS_ON=1: the hybrid barrier flag is forced on");
 }
 
 #[no_mangle]
@@ -127,6 +159,7 @@ pub extern "C" fn openjdk_gc_init(calls: *const OpenJDK_Upcalls) {
     } else {
         lazy_static::initialize(&crate::SINGLETON_UNCOMPRESSED);
     }
+    maybe_force_hybrid_barrier_on();
 }
 
 #[no_mangle]
@@ -469,6 +502,24 @@ pub extern "C" fn mmtk_array_copy_pre(
         mutator
             .barrier()
             .memory_region_copy_pre((src..src + bytes).into(), (dst..dst + bytes).into());
+    })
+}
+
+/// Array-copy pre-barrier that only reads the source.  Used when the destination is not
+/// initialised yet (a new array that is filled by the copy, or an object filled by `clone`), so its
+/// old contents must not be read.  The destination range passed to MMTk is empty.
+#[no_mangle]
+pub extern "C" fn mmtk_array_copy_pre_src_only(
+    mutator: *mut libc::c_void,
+    src: Address,
+    dst: Address,
+    count: usize,
+) {
+    let bytes = count << log_bytes_in_slot();
+    with_mutator!(|mutator| {
+        mutator
+            .barrier()
+            .memory_region_copy_pre((src..src + bytes).into(), (dst..dst).into());
     })
 }
 

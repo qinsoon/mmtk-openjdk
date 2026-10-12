@@ -104,8 +104,15 @@ public:
   virtual void object_reference_write_post(oop src, oop* slot, oop target) const {};
   /// Full arraycopy pre-barrier
   virtual void object_reference_array_copy_pre(oop* src, oop* dst, size_t count) const {};
+  /// Full arraycopy pre-barrier, when the destination is not initialised yet (IS_DEST_UNINITIALIZED).
+  /// The old contents of `dst` must not be read.  By default, the same as `object_reference_array_copy_pre`.
+  virtual void object_reference_array_copy_pre_dst_uninitialized(oop* src, oop* dst, size_t count) const {
+    object_reference_array_copy_pre(src, dst, count);
+  };
   /// Full arraycopy post-barrier
   virtual void object_reference_array_copy_post(oop* src, oop* dst, size_t count) const {};
+  /// Called before `src` is cloned into the newly allocated `dst` (`Object.clone`).
+  virtual void object_clone_pre(oop src, oop dst) const {};
   /// java.lang.Reference load barrier
   virtual void load_reference(DecoratorSet decorators, oop value) const {};
   /// Called at the end of every C2 slowpath allocation.
@@ -267,7 +274,11 @@ public:
                                       size_t length) {
       T* src = arrayOopDesc::obj_offset_to_raw(src_obj, src_offset_in_bytes, src_raw);
       T* dst = arrayOopDesc::obj_offset_to_raw(dst_obj, dst_offset_in_bytes, dst_raw);
-      runtime()->object_reference_array_copy_pre((oop*) src, (oop*) dst, length);
+      if ((decorators & IS_DEST_UNINITIALIZED) != 0) {
+        runtime()->object_reference_array_copy_pre_dst_uninitialized((oop*) src, (oop*) dst, length);
+      } else {
+        runtime()->object_reference_array_copy_pre((oop*) src, (oop*) dst, length);
+      }
       bool result = Raw::oop_arraycopy_in_heap(src_obj, src_offset_in_bytes, src_raw,
                                        dst_obj, dst_offset_in_bytes, dst_raw,
                                        length);
@@ -276,7 +287,7 @@ public:
     }
 
     static void clone_in_heap(oop src, oop dst, size_t size) {
-      // TODO: We don't need clone barriers at the moment.
+      runtime()->object_clone_pre(src, dst);
       Raw::clone_in_heap(src, dst, size);
     }
   };
