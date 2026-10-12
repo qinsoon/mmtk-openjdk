@@ -143,6 +143,40 @@ void MMTkBarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register threa
   }
 }
 
+void MMTkBarrierSetAssembler::weak_reference_load_barrier(MacroAssembler* masm, DecoratorSet decorators, BasicType type, Register dst, Register tmp1, uintptr_t flag_addr) {
+  bool on_oop = type == T_OBJECT || type == T_ARRAY;
+  bool on_weak = (decorators & ON_WEAK_OOP_REF) != 0;
+  bool on_phantom = (decorators & ON_PHANTOM_OOP_REF) != 0;
+  bool on_reference = on_weak || on_phantom;
+
+  if (mmtk_enable_reference_load_barrier) {
+    if (on_oop && on_reference) {
+      Label done;
+
+      assert_different_registers(dst, tmp1);
+
+      // No slow-call if the barrier is not active
+      // intptr_t tmp1_q = *flag_addr;
+      __ movptr(tmp1, (intptr_t) flag_addr);
+      // Load with zero extension to 32 bits.
+      // uint32_t tmp1_l = (uint32_t)(*(unt8_t*)tmp1_q);
+      __ movzbl(tmp1, Address(tmp1, 0));
+      // if (tmp1_l == 0) goto done;
+      __ testl(tmp1, tmp1);
+      __ jcc(Assembler::zero, done);
+      // if (dst == 0) goto done;
+      __ testptr(dst, dst);
+      __ jcc(Assembler::zero, done);
+      // Do slow-call
+      __ pusha();
+      __ mov(c_rarg0, dst);
+      __ MacroAssembler::call_VM_leaf_base(FN_ADDR(MMTkBarrierSetRuntime::load_reference_call), 1);
+      __ popa();
+      __ bind(done);
+    }
+  }
+}
+
 #undef __
 
 //////////////////// Assembler for C1 ////////////////////

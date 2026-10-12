@@ -17,6 +17,10 @@ protected:
   /// `compensate_val_reg` is true if this function is called after `BarrierSetAssembler::store_at` which compresses the pointer in the `val` register in place.
   virtual void object_reference_write_post(MacroAssembler* masm, DecoratorSet decorators, Address dst, Register val, Register tmp1, Register tmp2, Register tmp3, bool compensate_val_reg) const {}
 
+  /// Weak reference load barrier, emitted after the load: if the byte at `flag_addr` is non-zero and
+  /// the loaded referent in `dst` is not null, call `MMTkBarrierSetRuntime::load_reference_call`.
+  static void weak_reference_load_barrier(MacroAssembler* masm, DecoratorSet decorators, BasicType type, Register dst, Register tmp1, uintptr_t flag_addr);
+
   /// Barrier elision test
   virtual bool can_remove_barrier(DecoratorSet decorators, Register val, bool skip_const_null) const {
     bool in_heap = (decorators & IN_HEAP) != 0;

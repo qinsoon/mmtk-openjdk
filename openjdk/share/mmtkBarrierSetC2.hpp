@@ -54,6 +54,10 @@ protected:
   /// Full post-barrier
   virtual void object_reference_write_post(GraphKit* kit, Node* src, Node* slot, Node* val) const {}
 
+  /// `load_at_resolved` with the weak reference load barrier: if the byte at `flag_addr` is non-zero,
+  /// call `MMTkBarrierSetRuntime::load_reference_call` with the loaded referent.
+  Node* weak_reference_load_at_resolved(C2Access& access, const Type* val_type, uintptr_t flag_addr) const;
+
   virtual Node* store_at_resolved(C2Access& access, C2AccessValue& val) const {
     if (access.is_oop() && access.is_parse_access()) {
       C2ParseAccess& parse_access = static_cast<C2ParseAccess&>(access);
