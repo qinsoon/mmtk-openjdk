@@ -107,6 +107,7 @@ MMTkHeap::MMTkHeap() :
   _mmtk_manager(nullptr),
   _n_workers(0),
   _gc_lock(new Monitor(Mutex::nosafepoint, "MMTkHeap::_gc_lock", true)),
+  _assist_lock(new Monitor(Mutex::nosafepoint-4, "MMTkHeap::_assist_lock", true)),
   _num_root_scan_tasks(0),
   _companion_thread(nullptr),
   _soft_ref_policy(),
