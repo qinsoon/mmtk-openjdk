@@ -38,6 +38,8 @@
 #include "gc/shared/gcLocker.inline.hpp"
 #include "logging/log.hpp"
 #include "memory/resourceArea.hpp"
+#include "oops/access.inline.hpp"
+#include "utilities/growableArray.hpp"
 #include "mmtk.h"
 #include "mmtkHeap.hpp"
 #include "mmtkMutator.hpp"
@@ -451,10 +453,35 @@ public:
 };
 
 
+// Collects the objects an nmethod refers to.
+class MMTkCollectNMethodOopsClosure: public OopClosure {
+  GrowableArray<void*> _objects;
+  template <class T> void do_oop_work(T* p) {
+    oop o = RawAccess<>::oop_load(p);
+    if (o != nullptr) _objects.append((void*) o);
+  }
+public:
+  void do_oop(oop* p)       { do_oop_work(p); }
+  void do_oop(narrowOop* p) { do_oop_work(p); }
+  GrowableArray<void*>* objects() { return &_objects; }
+};
+
 void MMTkHeap::register_nmethod(nmethod* nm) {
   // Scan and report pointers in this nmethod
   MMTkRegisterNMethodOopClosure reg_cl;
   nm->oops_do(&reg_cl);
+  // The code roots were scanned when marking started.  If a concurrent plan is marking now,
+  // the objects this nmethod refers to must be marked (the insertion half of the barrier,
+  // applied to code roots).  This does nothing outside concurrent marking.
+  {
+    ResourceMark rm;
+    MMTkCollectNMethodOopsClosure collect_cl;
+    nm->oops_do(&collect_cl);
+    GrowableArray<void*>* objects = collect_cl.objects();
+    if (objects->is_nonempty()) {
+      mmtk_shade_objects(objects->adr_at(0), objects->length());
+    }
+  }
   // Register the nmethod
   mmtk_register_nmethod((void*) nm);
 }

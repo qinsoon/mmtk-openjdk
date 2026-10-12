@@ -37,6 +37,23 @@ extern "C" fn report_slots_and_renew_buffer<S: Slot, F: RootsWorkFactory<S>>(
     NewBuffer { ptr, capacity }
 }
 
+/// Shade objects during concurrent marking: see [`mmtk::memory_manager::shade_objects`].
+///
+/// # Safety
+/// `objects` must point to `len` valid object references.
+#[no_mangle]
+pub unsafe extern "C" fn mmtk_shade_objects(objects: *const ObjectReference, len: usize) {
+    if len == 0 {
+        return;
+    }
+    let objects = std::slice::from_raw_parts(objects, len);
+    if crate::use_compressed_oops() {
+        memory_manager::shade_objects(crate::singleton::<true>(), objects);
+    } else {
+        memory_manager::shade_objects(crate::singleton::<false>(), objects);
+    }
+}
+
 /// Like [`report_slots_and_renew_buffer`], but the factory is behind a mutex, so the closure can be
 /// invoked from several threads at the same time (for example from handshake closures).
 extern "C" fn report_slots_and_renew_buffer_sync<S: Slot, F: RootsWorkFactory<S>>(
