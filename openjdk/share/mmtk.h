@@ -110,6 +110,8 @@ struct MMTkSpanFastPathInfo {
     size_t spans_offset;
     size_t space_offset;
     size_t allocate_black_offset;
+    size_t inline_black_offset;
+    size_t black_bytes_offset;
     size_t alloc_cache_offset;
     size_t freeindex_offset;
     size_t nelems_offset;
@@ -117,11 +119,16 @@ struct MMTkSpanFastPathInfo {
     size_t start_offset;
     size_t alloc_count_offset;
     size_t needzero_offset;
+    size_t mark_bits_offset;
+    size_t scan_bits_offset;
+    size_t black_scan_offset;
     const uint8_t* size_to_span_class;
     size_t max_size;
 };
 
 extern void mmtk_span_fastpath_info(int semantics, MMTkSpanFastPathInfo* info);
+// Allocate-black for an object that C2's inline span fast path allocated at `cell` (a leaf).
+extern void mmtk_span_allocate_black(void* mutator, void* cell);
 extern size_t get_max_non_los_default_alloc_bytes();
 
 /**

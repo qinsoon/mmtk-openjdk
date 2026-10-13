@@ -231,6 +231,10 @@ pub struct SpanFastPathInfo {
     pub space_offset: usize,
     /// From the space pointer to its allocate-black flag (a byte).
     pub allocate_black_offset: usize,
+    /// From the space pointer to the flag (a byte) that lets the fast path allocate black.
+    pub inline_black_offset: usize,
+    /// From the mutator to the allocator's count of bytes allocated black.
+    pub black_bytes_offset: usize,
     /// Fields of a span descriptor.
     pub alloc_cache_offset: usize,
     pub freeindex_offset: usize,
@@ -239,6 +243,9 @@ pub struct SpanFastPathInfo {
     pub start_offset: usize,
     pub alloc_count_offset: usize,
     pub needzero_offset: usize,
+    pub mark_bits_offset: usize,
+    pub scan_bits_offset: usize,
+    pub black_scan_offset: usize,
     /// `size_to_span_class[size >> 3]` is the span class index for an allocation of `size` bytes
     /// (a multiple of 8, at most `max_size`) aligned to 8 bytes. 0 (an unused class whose slot
     /// always holds the empty span) if no small class fits.
@@ -286,6 +293,8 @@ pub unsafe extern "C" fn mmtk_span_fastpath_info(
                 spans_offset,
                 space_offset,
                 allocate_black_offset,
+                inline_black_offset,
+                black_bytes_offset,
                 alloc_cache_offset,
                 freeindex_offset,
                 nelems_offset,
@@ -293,12 +302,17 @@ pub unsafe extern "C" fn mmtk_span_fastpath_info(
                 start_offset,
                 alloc_count_offset,
                 needzero_offset,
+                mark_bits_offset,
+                scan_bits_offset,
+                black_scan_offset,
             },
         ) => SpanFastPathInfo {
             valid: true,
             spans_offset,
             space_offset,
             allocate_black_offset,
+            inline_black_offset,
+            black_bytes_offset,
             alloc_cache_offset,
             freeindex_offset,
             nelems_offset,
@@ -306,6 +320,9 @@ pub unsafe extern "C" fn mmtk_span_fastpath_info(
             start_offset,
             alloc_count_offset,
             needzero_offset,
+            mark_bits_offset,
+            scan_bits_offset,
+            black_scan_offset,
             size_to_span_class: SPAN_CLASS_TABLE.as_ptr(),
             max_size: SPAN_TABLE_MAX_SIZE,
         },
@@ -314,6 +331,8 @@ pub unsafe extern "C" fn mmtk_span_fastpath_info(
             spans_offset: 0,
             space_offset: 0,
             allocate_black_offset: 0,
+            inline_black_offset: 0,
+            black_bytes_offset: 0,
             alloc_cache_offset: 0,
             freeindex_offset: 0,
             nelems_offset: 0,
@@ -321,11 +340,26 @@ pub unsafe extern "C" fn mmtk_span_fastpath_info(
             start_offset: 0,
             alloc_count_offset: 0,
             needzero_offset: 0,
+            mark_bits_offset: 0,
+            scan_bits_offset: 0,
+            black_scan_offset: 0,
             size_to_span_class: std::ptr::null(),
             max_size: 0,
         },
     };
     info.write(result);
+}
+
+/// Allocate-black for an object that C2's inline SpanAllocator fast path allocated at `cell`
+/// (what the interpreter and C1 fast paths do inline). A leaf: it neither blocks nor allocates.
+#[no_mangle]
+pub extern "C" fn mmtk_span_allocate_black(mutator: *mut libc::c_void, cell: Address) {
+    use mmtk::util::alloc::SpanAllocator;
+    with_mutator!(|mutator| unsafe {
+        mutator
+            .allocator_impl_mut_for_semantic::<SpanAllocator<_>>(AllocationSemantics::Default)
+            .allocate_black_inline(cell)
+    })
 }
 
 #[no_mangle]

@@ -100,6 +100,7 @@ struct SpanAllocator {
   void* space;
   void* context;
   intptr_t assist_credit;
+  size_t black_bytes;
 };
 
 struct Allocators {

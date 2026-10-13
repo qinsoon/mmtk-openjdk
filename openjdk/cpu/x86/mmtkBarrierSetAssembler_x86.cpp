@@ -158,9 +158,10 @@ void MMTkBarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register threa
 }
 
 // The SpanAllocator fast path, Go's nextFreeFast (runtime/malloc.go) as in mmtk-core's
-// Span::next_free_fast:
+// Span::next_free_fast, and Go's gcmarknewobject while marking:
 //
-//   if space.allocate_as_live: slow             // allocate-black needs the slow path (design 5.8)
+//   black = space.allocate_as_live
+//   if black && !space.inline_black: slow       // new objects also need log bits (SATB option)
 //   span = mutator.span_allocator.alloc[size_to_span_class[size >> 3]]
 //   cache = span.alloc_cache
 //   if cache == 0: slow
@@ -172,9 +173,14 @@ void MMTkBarrierSetAssembler::eden_allocate(MacroAssembler* masm, Register threa
 //   span.alloc_cache = cache >> (bit + 1)        // two shifts: a shift by 64 gives 0
 //   span.freeindex = freeidx
 //   span.alloc_count += 1                        // only the owning mutator writes a cached span
+//   if black:                                    // gcmarknewobject; both bits are known to be clear
+//     if span.black_scan: atomic span.scan_bits[result / 64] |= 1 << (result % 64)
+//     atomic span.mark_bits[result / 64] |= 1 << (result % 64)
+//     mutator.span_allocator.black_bytes += span.elemsize   // Go: gcw.bytesMarked
 //   obj = span.start + result * span.elemsize
 //
-// Nothing is written before the last check. The caller zeroes the object (no ZeroTLAB), so
+// Nothing is written before the last check. The black path needs BMI2 (shlx); without it, the
+// fast path bails out while allocating black. The caller zeroes the object (no ZeroTLAB), so
 // needzero only matters with ZeroTLAB, which makes the fast path bail out on needzero spans.
 void MMTkBarrierSetAssembler::span_allocate(MacroAssembler* masm, const MMTkSpanFastPathInfo* info, Register obj, Register var_size_in_bytes, int con_size_in_bytes, Register t1, Label& slow_case) {
   assert(obj == rax, "obj must be in rax");
@@ -185,10 +191,21 @@ void MMTkBarrierSetAssembler::span_allocate(MacroAssembler* masm, const MMTkSpan
   const Register span = scratch;
   const Register bit = t1;
 
-  // Allocate-black: the flag only changes while mutators are stopped.
+  // Allocate-black: the flags only change while mutators are stopped.
+  const bool inline_black = VM_Version::supports_bmi2();
   __ movptr(span, Address(r15_thread, mutator_offset + (int)info->space_offset));
-  __ cmpb(Address(span, (int)info->allocate_black_offset), 0);
-  __ jcc(Assembler::notEqual, slow_case);
+  {
+    Label not_black;
+    __ cmpb(Address(span, (int)info->allocate_black_offset), 0);
+    __ jcc(Assembler::equal, not_black);
+    if (inline_black) {
+      __ cmpb(Address(span, (int)info->inline_black_offset), 0);
+      __ jcc(Assembler::equal, slow_case);
+    } else {
+      __ jmp(slow_case);
+    }
+    __ bind(not_black);
+  }
 
   // span = mutator.alloc[span class]
   if (var_size_in_bytes == noreg) {
@@ -248,6 +265,35 @@ void MMTkBarrierSetAssembler::span_allocate(MacroAssembler* masm, const MMTkSpan
   __ movq(Address(span, (int)info->alloc_cache_offset), obj);
   __ movq(Address(span, (int)info->freeindex_offset), bit);
   __ addq(Address(span, (int)info->alloc_count_offset), 1);
+  if (inline_black) {
+    // Allocate-black (Go: gcmarknewobject).
+    Label not_black;
+    __ movptr(obj, Address(r15_thread, mutator_offset + (int)info->space_offset));
+    __ cmpb(Address(obj, (int)info->allocate_black_offset), 0);
+    __ jcc(Assembler::equal, not_black);
+    // obj = index = freeidx - 1, bit = 1 << (index % 64), obj = index / 64
+    __ lea(obj, Address(bit, -1));
+    __ movl(bit, 1);
+    __ shlxq(bit, bit, obj);
+    __ shrq(obj, 6);
+    {
+      // The scan bit first, so that a span scan never sees the object marked but not scanned.
+      Label no_scan;
+      __ cmpb(Address(span, (int)info->black_scan_offset), 0);
+      __ jcc(Assembler::equal, no_scan);
+      __ lock();
+      __ orq(Address(span, obj, Address::times_8, (int)info->scan_bits_offset), bit);
+      __ bind(no_scan);
+    }
+    __ lock();
+    __ orq(Address(span, obj, Address::times_8, (int)info->mark_bits_offset), bit);
+    // Only this mutator writes its black_bytes.
+    __ movq(bit, Address(span, (int)info->elemsize_offset));
+    __ addq(Address(r15_thread, mutator_offset + (int)info->black_bytes_offset), bit);
+    // bit = freeidx again
+    __ movq(bit, Address(span, (int)info->freeindex_offset));
+    __ bind(not_black);
+  }
   // obj = start + (freeidx - 1) * elemsize
   __ lea(obj, Address(bit, -1));
   __ imulq(obj, Address(span, (int)info->elemsize_offset));

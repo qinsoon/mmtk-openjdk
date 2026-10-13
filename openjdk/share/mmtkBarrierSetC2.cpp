@@ -50,8 +50,21 @@
 #include "runtime/sharedRuntime.hpp"
 #include "utilities/macros.hpp"
 
+// The type of mmtk_span_allocate_black(mutator, cell).
+static const TypeFunc* mmtk_span_allocate_black_Type() {
+  const Type** fields = TypeTuple::fields(2);
+  fields[TypeFunc::Parms + 0] = TypeRawPtr::BOTTOM; // mutator
+  fields[TypeFunc::Parms + 1] = TypeRawPtr::BOTTOM; // cell
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms + 2, fields);
+  fields = TypeTuple::fields(0);
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms + 0, fields);
+  return TypeFunc::make(domain, range);
+}
+
 // The SpanAllocator fast path (Go's nextFreeFast, mmtk-core's Span::next_free_fast). See
-// MMTkBarrierSetAssembler::span_allocate (x86) for the pseudo code. Returns the control of the
+// MMTkBarrierSetAssembler::span_allocate (x86) for the pseudo code. While allocating black, the
+// marking (Go's gcmarknewobject) is a leaf call to mmtk_span_allocate_black, like Go's call from
+// mallocgc; the interpreter and C1 do it inline. Returns the control of the
 // slow path (a region merging every bail-out) and sets the fast-path result. Nothing is stored
 // before the last check.
 Node* MMTkBarrierSetC2::expand_span_allocate(PhaseMacroExpand* x, const MMTkSpanFastPathInfo* info,
@@ -87,10 +100,14 @@ Node* MMTkBarrierSetC2::expand_span_allocate(PhaseMacroExpand* x, const MMTkSpan
 
   Node* thread = x->transform_later(new ThreadLocalNode());
 
-  // Allocate-black: the slow path marks new objects. The flag only changes at a safepoint.
+  // Allocate-black. The flags only change at a safepoint. If new objects also need log bits
+  // (inline_black is 0), the slow path allocates.
   Node* space = load(ctrl, thread, mutator_offset + info->space_offset, TypeRawPtr::BOTTOM, T_ADDRESS);
   Node* black = load(ctrl, space, info->allocate_black_offset, TypeInt::UBYTE, T_BOOLEAN);
-  ctrl = bail_if(ctrl, bool_of(new CmpINode(black, x->intcon(0)), BoolTest::ne));
+  Node* inline_black = load(ctrl, space, info->inline_black_offset, TypeInt::UBYTE, T_BOOLEAN);
+  Node* not_inline = x->transform_later(new XorINode(inline_black, x->intcon(1)));
+  Node* black_not_inline = x->transform_later(new AndINode(black, not_inline));
+  ctrl = bail_if(ctrl, bool_of(new CmpINode(black_not_inline, x->intcon(0)), BoolTest::ne));
 
   // span = mutator.alloc[span class]
   Node* span_slot;
@@ -145,6 +162,31 @@ Node* MMTkBarrierSetC2::expand_span_allocate(PhaseMacroExpand* x, const MMTkSpan
   Node* elemsize = load(ctrl, span, info->elemsize_offset, TypeLong::LONG, T_LONG);
   Node* offset = x->transform_later(new MulLNode(result, elemsize));
   fast_oop = x->basic_plus_adr(x->top(), start, offset);
+
+  // if black: mmtk_span_allocate_black(mutator, obj)
+  {
+    IfNode* iff = new IfNode(ctrl, bool_of(new CmpINode(black, x->intcon(0)), BoolTest::ne), PROB_FAIR, COUNT_UNKNOWN);
+    x->transform_later(iff);
+    Node* black_ctrl = x->transform_later(new IfTrueNode(iff));
+    Node* white_ctrl = x->transform_later(new IfFalseNode(iff));
+    Node* mutator = adr(thread, mutator_offset);
+    Node* call = x->make_leaf_call(black_ctrl, m, mmtk_span_allocate_black_Type(),
+                                   CAST_FROM_FN_PTR(address, mmtk_span_allocate_black),
+                                   "mmtk_span_allocate_black", TypeRawPtr::BOTTOM, mutator, fast_oop);
+    x->transform_later(call);
+    Node* call_ctrl = x->transform_later(new ProjNode(call, TypeFunc::Control));
+    Node* call_mem = x->transform_later(new ProjNode(call, TypeFunc::Memory));
+    RegionNode* merge = new RegionNode(3);
+    merge->init_req(1, white_ctrl);
+    merge->init_req(2, call_ctrl);
+    x->transform_later(merge);
+    PhiNode* merge_mem = new PhiNode(merge, Type::MEMORY, TypeRawPtr::BOTTOM);
+    merge_mem->init_req(1, m);
+    merge_mem->init_req(2, call_mem);
+    x->transform_later(merge_mem);
+    ctrl = merge;
+    m = merge_mem;
+  }
   fast_oop_ctrl = ctrl;
   fast_oop_rawmem = m;
 
